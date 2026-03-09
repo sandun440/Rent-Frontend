@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
   Bike,
   MapPin,
@@ -10,30 +10,56 @@ import {
   ChevronRight,
   Menu,
   X,
-} from 'lucide-react';
+  Star,
+  Shield,
+  ArrowRight,
+  Info,
+  CheckCircle2,
+  Camera,
+  Compass,
+  Zap,
+} from "lucide-react";
+import Navbar from "../components/Navbar";
+import { toast } from "react-toastify";
 
-// Correct: Uses Vite proxy → no CORS, works in dev & prod
-const API_BASE = '/api';
+const API_BASE = "/api";
 
 export default function HomePage() {
   const [bicycles, setBicycles] = useState([]);
   const [selectedBicycle, setSelectedBicycle] = useState(null);
   const [showBooking, setShowBooking] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [bookingForm, setBookingForm] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    startTime: '',
-    endTime: '',
-    rentalType: 'hourly',
+    name: "",
+    email: "",
+    phone: "",
+    startTime: "",
+    endTime: "",
+    rentalType: "hourly",
   });
 
-  // -------------------------------------------------
-  // Fetch available bicycles
-  // -------------------------------------------------
+  const revealingRefs = useRef([]);
+
   useEffect(() => {
     fetchBicycles();
+
+    // Intersection Observer for reveal animations
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("active");
+          }
+        });
+      },
+      { threshold: 0.05 },
+    ); // Lower threshold for better sensitivity
+
+    const currentRefs = revealingRefs.current;
+    currentRefs.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => observer.disconnect();
   }, []);
 
   const fetchBicycles = async () => {
@@ -41,27 +67,33 @@ export default function HomePage() {
       const res = await fetch(`${API_BASE}/bicycles`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setBicycles(data.filter((bike) => bike.isAvailable));
+      if (Array.isArray(data)) {
+        setBicycles(data.filter((bike) => bike.isAvailable));
+      } else {
+        console.warn("Expected array for bicycles, got:", data);
+        setBicycles([]);
+      }
     } catch (error) {
-      console.error('Error fetching bicycles:', error);
+      console.error("Error fetching bicycles:", error);
+      setBicycles([]);
     }
   };
 
-  // -------------------------------------------------
-  // Submit booking
-  // -------------------------------------------------
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
-
     if (!bookingForm.startTime || !bookingForm.endTime) {
-      alert('Please select start and end time');
+      toast.error("Please select start and end time");
       return;
     }
 
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           userEmail: bookingForm.email,
           name: bookingForm.name,
@@ -73,142 +105,228 @@ export default function HomePage() {
       });
 
       const result = await res.json();
-
       if (res.ok) {
-        alert('Booking successful! Enjoy your ride!');
+        toast.success("Booking successful! Enjoy your safari ride!");
         setShowBooking(false);
         setSelectedBicycle(null);
         setBookingForm({
-          name: '',
-          email: '',
-          phone: '',
-          startTime: '',
-          endTime: '',
-          rentalType: 'hourly',
+          name: "",
+          email: "",
+          phone: "",
+          startTime: "",
+          endTime: "",
+          rentalType: "hourly",
         });
-        fetchBicycles(); // Refresh list
+        fetchBicycles();
       } else {
-        alert(result.error || 'Booking failed. Please try again.');
+        toast.error(result.error || "Booking failed");
       }
     } catch (error) {
-      console.error('Error creating booking:', error);
-      alert('Network error. Please check your connection.');
+      toast.error("Network error. Please try again later.");
     }
   };
 
-  // -------------------------------------------------
-  // Render
-  // -------------------------------------------------
   return (
-    
-    <div className="min-h-screen bg-linear-to-br from-green-50 via-blue-50 to-teal-50">
-      
-      {/* ==================== HEADER ==================== */}
-      <header className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-3">
-              <div className="bg-linear-to-br from-green-500 to-teal-600 p-2 rounded-full">
-                <Bike className="text-white" size={28} />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-linear-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
-                  Bicycle Safari
-                </h1>
-                <p className="text-xs text-gray-600">Udawalawa</p>
+    <div className="min-h-screen bg-[#0f172a] text-slate-200 selection:bg-emerald-500/30">
+      <Navbar />
+
+      {/* ==================== HERO ==================== */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Background Parallax Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/images/hero_bg.png"
+            alt="Udawalawa Safari"
+            className="w-full h-full object-cover scale-110 opacity-40"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a]/20 via-[#0f172a]/60 to-[#0f172a]"></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center">
+          <div className="inline-flex items-center gap-3 mb-6 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full animate-fade-in">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="text-emerald-400 font-bold text-xs uppercase tracking-widest">
+              Sri Lanka's Best Bicycle Safari
+            </span>
+          </div>
+
+          <h1 className="text-6xl md:text-8xl font-black text-white mb-8 tracking-tighter">
+            Ride Into The
+            <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400">
+              Wild Heart
+            </span>
+          </h1>
+
+          <p className="text-xl md:text-2xl text-slate-400 mb-10 max-w-3xl mx-auto leading-relaxed">
+            Unleash your inner explorer. Navigate the hidden trails of Udawalawa
+            with our premium fleet of adventure-ready bicycles.
+          </p>
+
+          <div className="flex flex-wrap justify-center gap-6">
+            <a
+              href="#fleet"
+              className="bg-emerald-500 hover:bg-emerald-400 text-slate-900 px-10 py-5 rounded-2xl font-black text-lg transition-all transform hover:-translate-y-1 hover:shadow-2xl hover:shadow-emerald-500/20 flex items-center gap-2 group"
+            >
+              Start Adventure{" "}
+              <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+            </a>
+            <a
+              href="#experience"
+              className="bg-slate-800 hover:bg-slate-700 text-white px-10 py-5 rounded-2xl font-black text-lg transition-all border border-slate-700 flex items-center gap-2"
+            >
+              Watch Safari <Compass className="text-emerald-400" />
+            </a>
+          </div>
+        </div>
+
+        {/* Decorative Elements */}
+        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-40">
+          <div className="w-6 h-10 border-2 border-slate-500 rounded-full flex justify-center p-2">
+            <div className="w-1 h-2 bg-emerald-500 rounded-full"></div>
+          </div>
+        </div>
+      </section>
+
+      {/* ==================== STATS / TRUST ==================== */}
+      <section className="py-20 relative px-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          {[
+            { label: "Safari Bikes", val: "50+" },
+            { label: "Happy Tourists", val: "10K+" },
+            { label: "Scenic Trails", val: "25+" },
+            { label: "Avg Rating", val: "4.9/5" },
+          ].map((s, i) => (
+            <div key={i} className="text-center group">
+              <h3 className="text-4xl md:text-6xl font-black text-white mb-2 group-hover:text-emerald-400 transition-colors">
+                {s.val}
+              </h3>
+              <p className="text-slate-500 uppercase tracking-widest text-xs font-bold">
+                {s.label}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ==================== EXPERIENCE ==================== */}
+      <section
+        id="experience"
+        className="py-24 px-4 overflow-hidden reveal-on-scroll"
+        ref={(el) => (revealingRefs.current[0] = el)}
+      >
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            <div className="relative">
+              <div className="absolute -inset-4 bg-emerald-500/10 blur-3xl rounded-full"></div>
+              <img
+                src="/images/safari_vibe.png"
+                alt="Udawalawa Scenery"
+                className="relative rounded-[3rem] shadow-2xl border border-slate-800 grayscale hover:grayscale-0 transition-all duration-700 cursor-pointer"
+              />
+              <div className="absolute -bottom-8 -right-8 bg-[#1e293b] p-8 rounded-[2rem] border border-slate-700 shadow-2xl glass-dark animate-float">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-500/20 rounded-2xl">
+                    <Camera className="text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-white">Wildlife Sightings</p>
+                    <p className="text-xs text-slate-400">98% Success Rate</p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <nav className="hidden md:flex space-x-8">
-              <a href="#bikes" className="text-gray-700 hover:text-green-600 transition">
-                Bikes
-              </a>
-              <a href="#about" className="text-gray-700 hover:text-green-600 transition">
-                About
-              </a>
-              <a href="#contact" className="text-gray-700 hover:text-green-600 transition">
-                Contact
-              </a>
-            </nav>
-
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
+            <div>
+              <h2 className="text-4xl md:text-5xl font-black text-white mb-8 border-l-4 border-emerald-500 pl-8">
+                Explore Udawalawa <br /> Like Never Before
+              </h2>
+              <div className="space-y-8">
+                {[
+                  {
+                    title: "Off-Road Trails",
+                    desc: "Custom routes through teak forests and lakeside paths.",
+                    icon: MapPin,
+                  },
+                  {
+                    title: "Eco-Friendly Safari",
+                    desc: "No noise, no fumes. Just you and the sounds of nature.",
+                    icon: Zap,
+                  },
+                  {
+                    title: "Expert Guidance",
+                    desc: "Maps and area insights provided for every rental.",
+                    icon: Compass,
+                  },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-6 items-start group">
+                    <div className="p-4 bg-slate-800 rounded-2xl group-hover:bg-emerald-500/20 transition-colors">
+                      <item.icon className="text-emerald-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-xl font-bold text-white mb-2">
+                        {item.title}
+                      </h4>
+                      <p className="text-slate-400">{item.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
-
-        {mobileMenuOpen && (
-          <div className="md:hidden bg-white border-t">
-            <nav className="flex flex-col space-y-4 px-4 py-4">
-              <a href="#bikes" className="text-gray-700 hover:text-green-600 transition">
-                Bikes
-              </a>
-              <a href="#about" className="text-gray-700 hover:text-green-600 transition">
-                About
-              </a>
-              <a href="#contact" className="text-gray-700 hover:text-green-600 transition">
-                Contact
-              </a>
-            </nav>
-          </div>
-        )}
-      </header>
-
-      {/* ==================== HERO ==================== */}
-      <section className="relative py-20 px-4 overflow-hidden">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-block mb-4 px-4 py-2 bg-green-100 rounded-full">
-            <span className="text-green-700 font-semibold text-sm">
-              Explore Udawalawa on Two Wheels
-            </span>
-          </div>
-          <h2 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-            Adventure Awaits in
-            <span className="block bg-linear-to-r from-green-600 to-teal-600 bg-clip-text text-transparent">
-              Udawalawa Wildlife
-            </span>
-          </h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Discover the beauty of nature at your own pace. Premium bicycles for unforgettable journeys.
-          </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <a
-              href="#bikes"
-              className="bg-linear-to-r from-green-600 to-teal-600 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg transform hover:-translate-y-1 transition-all inline-flex items-center"
-            >
-              Browse Bikes <ChevronRight className="ml-2" />
-            </a>
-            <button className="bg-white text-gray-700 px-8 py-4 rounded-full font-semibold border-2 border-gray-200 hover:border-green-600 transition-all">
-              Learn More
-            </button>
-          </div>
-        </div>
-
-        <div className="absolute top-20 left-10 w-20 h-20 bg-green-300 rounded-full opacity-20 blur-xl"></div>
-        <div className="absolute bottom-20 right-10 w-32 h-32 bg-teal-300 rounded-full opacity-20 blur-xl"></div>
       </section>
 
-      {/* ==================== FEATURES ==================== */}
-      <section className="py-16 px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* ==================== HOW IT WORKS ==================== */}
+      <section
+        className="py-24 bg-[#0f172a]/80 relative reveal-on-scroll"
+        ref={(el) => (revealingRefs.current[1] = el)}
+      >
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">
+              Simple Steps to Adventure
+            </h2>
+            <div className="w-24 h-1 bg-emerald-500 mx-auto rounded-full"></div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {[
-              { icon: Bike, title: 'Quality Bikes', desc: 'Well-maintained, premium bicycles for all terrains' },
-              { icon: MapPin, title: 'Best Routes', desc: 'Explore scenic trails and wildlife hotspots' },
-              { icon: Clock, title: 'Flexible Rental', desc: 'Hourly, daily, or weekly rental options' },
-            ].map((f, i) => (
+              {
+                step: "01",
+                title: "Pick Your Ride",
+                desc: "Browse our specialized fleet of mountain and hybrid bikes.",
+                icon: Bike,
+              },
+              {
+                step: "02",
+                title: "Book Online",
+                desc: "Select your duration and confirm your reservation instantly.",
+                icon: Calendar,
+              },
+              {
+                step: "03",
+                title: "Ride the Wild",
+                desc: "Collect your bike and start your unique safari journey.",
+                icon: Zap,
+              },
+            ].map((s, i) => (
               <div
                 key={i}
-                className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-all transform hover:-translate-y-2"
+                className="relative group text-center p-10 bg-slate-800/30 rounded-[3rem] border border-slate-800 hover:border-emerald-500/50 transition-all"
               >
-                <div className="bg-linear-to-br from-green-100 to-teal-100 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-                  <f.icon className="text-green-600" size={32} />
+                <div className="text-8xl font-black text-slate-800/50 absolute top-4 left-4 -z-10 group-hover:text-emerald-500/5 transition-colors">
+                  {s.step}
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">{f.title}</h3>
-                <p className="text-gray-600">{f.desc}</p>
+                <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-lg shadow-emerald-500/20">
+                  <s.icon className="text-slate-900" size={32} />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">
+                  {s.title}
+                </h3>
+                <p className="text-slate-400">{s.desc}</p>
               </div>
             ))}
           </div>
@@ -216,54 +334,111 @@ export default function HomePage() {
       </section>
 
       {/* ==================== FLEET ==================== */}
-      <section id="bikes" className="py-16 px-4">
+      <section
+        id="fleet"
+        className="py-24 px-4 bg-gradient-to-b from-[#0f172a] to-[#111827] reveal-on-scroll"
+        ref={(el) => (revealingRefs.current[2] = el)}
+      >
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Fleet</h2>
-            <p className="text-gray-600 text-lg">Choose your perfect ride</p>
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+            <div>
+              <h2 className="text-4xl md:text-6xl font-black text-white mb-4 uppercase italic">
+                The Beast <span className="text-emerald-500">Fleet</span>
+              </h2>
+              <p className="text-slate-400 text-lg">
+                Engineered for Udawalawa's diverse terrain.
+              </p>
+            </div>
+            <div className="flex gap-4">
+              {["All", "Mountain", "Road", "Hybrid"].map((cat) => (
+                <button
+                  key={cat}
+                  className="px-6 py-2 rounded-full border border-slate-700 text-sm font-bold hover:bg-emerald-500 hover:text-slate-900 transition-all"
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {bicycles.map((bike) => (
               <div
                 key={bike._id}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl transition-all transform hover:-translate-y-2"
+                className="group relative bg-[#1e293b] rounded-[2.5rem] overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10"
               >
-                <div className="bg-linear-to-br from-green-400 to-teal-500 h-48 flex items-center justify-center">
-                  <Bike size={80} className="text-white opacity-80" />
-                </div>
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-2xl font-bold text-gray-900">{bike.name}</h3>
-                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold">
+                {/* Image Placeholder with Gradient */}
+                <div className="h-64 relative overflow-hidden bg-slate-800 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 group-hover:opacity-100 opacity-60 transition-opacity"></div>
+                  <Bike
+                    size={120}
+                    className="text-slate-700 group-hover:text-emerald-400 transition-colors group-hover:scale-110 duration-500"
+                  />
+                  <div className="absolute top-6 right-6">
+                    <span className="px-4 py-2 bg-emerald-500 text-slate-900 rounded-full text-xs font-black uppercase shadow-lg">
                       {bike.type}
                     </span>
                   </div>
-                  <p className="text-gray-600 mb-4">#{bike.bicyclenumber}</p>
+                </div>
 
-                  <div className="space-y-2 mb-6">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Hourly</span>
-                      <span className="font-bold text-gray-900">LKR {bike.pricePerHour}</span>
+                <div className="p-8">
+                  <div className="flex justify-between items-start mb-6">
+                    <div>
+                      <h3 className="text-2xl font-black text-white mb-1 group-hover:text-emerald-400 transition-colors">
+                        {bike.name}
+                      </h3>
+                      <p className="text-slate-500 font-mono text-sm uppercase tracking-tighter">
+                        ID: #{bike.bicyclenumber}
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Daily</span>
-                      <span className="font-bold text-gray-900">LKR {bike.pricePerDay}</span>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 mb-8">
+                    <div className="bg-slate-900/50 p-3 rounded-2xl text-center border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">
+                        Hr
+                      </p>
+                      <p className="text-sm font-black text-white">
+                        Rs.{bike.pricePerHour}
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Weekly</span>
-                      <span className="font-bold text-gray-900">LKR {bike.pricePerWeek}</span>
+                    <div className="bg-slate-900/50 p-3 rounded-2xl text-center border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">
+                        Day
+                      </p>
+                      <p className="text-sm font-black text-white">
+                        Rs.{bike.pricePerDay}
+                      </p>
+                    </div>
+                    <div className="bg-slate-900/50 p-3 rounded-2xl text-center border border-slate-800">
+                      <p className="text-[10px] text-slate-500 font-bold uppercase mb-1">
+                        Wk
+                      </p>
+                      <p className="text-sm font-black text-white">
+                        Rs.{bike.pricePerWeek}
+                      </p>
                     </div>
                   </div>
 
                   <button
                     onClick={() => {
+                      const user = JSON.parse(localStorage.getItem("user"));
+                      if (!user) {
+                        toast.info("Please login to book your ride");
+                        return;
+                      }
                       setSelectedBicycle(bike);
+                      setBookingForm((prev) => ({
+                        ...prev,
+                        name: user.name,
+                        email: user.email,
+                      }));
                       setShowBooking(true);
                     }}
-                    className="w-full bg-linear-to-r from-green-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all"
+                    className="w-full bg-slate-900 hover:bg-emerald-500 hover:text-slate-900 text-white py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2 group/btn"
                   >
-                    Book Now
+                    Lock It In{" "}
+                    <Zap size={18} className="group-hover/btn:animate-pulse" />
                   </button>
                 </div>
               </div>
@@ -271,9 +446,14 @@ export default function HomePage() {
           </div>
 
           {bicycles.length === 0 && (
-            <div className="text-center py-12">
-              <Bike size={64} className="mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500 text-lg">No bicycles available at the moment</p>
+            <div className="text-center py-20 bg-slate-900/30 rounded-[3rem] border border-dashed border-slate-700">
+              <Bike
+                size={64}
+                className="mx-auto text-slate-700 mb-6 animate-pulse"
+              />
+              <p className="text-slate-400 text-xl font-bold">
+                The fleet is currently out exploring. <br /> Check back shortly!
+              </p>
             </div>
           )}
         </div>
@@ -281,84 +461,67 @@ export default function HomePage() {
 
       {/* ==================== BOOKING MODAL ==================== */}
       {showBooking && selectedBicycle && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="bg-linear-to-r from-green-600 to-teal-600 text-white p-6">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-3xl font-bold mb-2">Book Your Ride</h3>
-                  <p className="opacity-90">
-                    {selectedBicycle.name} - {selectedBicycle.type}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowBooking(false)}
-                  className="bg-white/20 hover:bg-white/30 rounded-full p-2 transition"
-                >
-                  <X size={24} />
-                </button>
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-xl z-[9999] flex items-center justify-center p-4">
+          <div className="bg-[#1e293b] rounded-[3rem] max-w-2xl w-full border border-slate-700 shadow-2xl overflow-hidden animate-scale-in">
+            <div className="px-10 py-10 bg-gradient-to-r from-emerald-500 to-cyan-500 flex justify-between items-start">
+              <div>
+                <h3 className="text-3xl font-black text-slate-900 mb-1">
+                  Confirm Rental
+                </h3>
+                <p className="text-slate-900/70 font-bold uppercase text-xs tracking-widest">
+                  {selectedBicycle.name} • {selectedBicycle.type}
+                </p>
               </div>
+              <button
+                onClick={() => setShowBooking(false)}
+                className="bg-slate-900/20 hover:bg-slate-900/40 p-3 rounded-full transition-colors"
+              >
+                <X className="text-slate-900" size={24} />
+              </button>
             </div>
 
-            <form onSubmit={handleBookingSubmit} className="p-6 space-y-6">
-              {/* Name */}
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  <User className="inline mr-2" size={18} /> Full Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={bookingForm.name}
-                  onChange={(e) => setBookingForm({ ...bookingForm, name: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition"
-                  placeholder="John Doe"
-                />
+            <form onSubmit={handleBookingSubmit} className="p-10 space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <User size={14} className="text-emerald-400" /> Your
+                    Identity
+                  </label>
+                  <input
+                    readOnly
+                    value={bookingForm.name}
+                    className="w-full bg-slate-900/50 border border-slate-700 rounded-2xl p-4 text-slate-300 focus:outline-none cursor-not-allowed"
+                  />
+                </div>
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Phone size={14} className="text-emerald-400" /> Connection
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+94 7X XXX XXXX"
+                    value={bookingForm.phone}
+                    onChange={(e) =>
+                      setBookingForm({ ...bookingForm, phone: e.target.value })
+                    }
+                    className="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-white focus:ring-2 focus:ring-emerald-500/50 transition-all outline-none"
+                  />
+                </div>
               </div>
 
-              {/* Email */}
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  <Mail className="inline mr-2" size={18} /> Email Address
+              <div className="space-y-2 text-left">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest">
+                  Duration Preference
                 </label>
-                <input
-                  type="email"
-                  required
-                  value={bookingForm.email}
-                  onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition"
-                  placeholder="john@example.com"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">
-                  <Phone className="inline mr-2" size={18} /> Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={bookingForm.phone}
-                  onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition"
-                  placeholder="+94 77 123 4567"
-                />
-              </div>
-
-              {/* Rental Type */}
-              <div>
-                <label className="block text-gray-700 font-semibold mb-2">Rental Type</label>
-                <div className="grid grid-cols-3 gap-3">
-                  {['hourly', 'daily', 'weekly'].map((type) => (
+                <div className="grid grid-cols-3 gap-4">
+                  {["hourly", "daily", "weekly"].map((type) => (
                     <button
                       key={type}
                       type="button"
-                      onClick={() => setBookingForm({ ...bookingForm, rentalType: type })}
-                      className={`py-3 px-4 rounded-xl font-semibold capitalize transition ${
-                        bookingForm.rentalType === type
-                          ? 'bg-linear-to-r from-green-600 to-teal-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                      onClick={() =>
+                        setBookingForm({ ...bookingForm, rentalType: type })
+                      }
+                      className={`py-4 rounded-2xl font-black uppercase text-xs transition-all ${bookingForm.rentalType === type ? "bg-emerald-500 text-slate-900 shadow-lg shadow-emerald-500/20" : "bg-slate-900 text-slate-500 hover:text-white"}`}
                     >
                       {type}
                     </button>
@@ -366,58 +529,69 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Start & End Time */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    <Calendar className="inline mr-2" size={18} /> Start Time
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Calendar size={14} className="text-emerald-400" />{" "}
+                    Adventure Start
                   </label>
                   <input
                     type="datetime-local"
                     required
-                    value={bookingForm.startTime}
-                    onChange={(e) => setBookingForm({ ...bookingForm, startTime: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-white focus:ring-2 focus:ring-emerald-500/50 outline-none"
+                    onChange={(e) =>
+                      setBookingForm({
+                        ...bookingForm,
+                        startTime: e.target.value,
+                      })
+                    }
                   />
                 </div>
-                <div>
-                  <label className="block text-gray-700 font-semibold mb-2">
-                    <Calendar className="inline mr-2" size={18} /> End Time
+                <div className="space-y-2 text-left">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                    <Calendar size={14} className="text-emerald-400" />{" "}
+                    Adventure End
                   </label>
                   <input
                     type="datetime-local"
                     required
-                    value={bookingForm.endTime}
-                    onChange={(e) => setBookingForm({ ...bookingForm, endTime: e.target.value })}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-500 focus:outline-none transition"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-2xl p-4 text-white focus:ring-2 focus:ring-emerald-500/50 outline-none"
+                    onChange={(e) =>
+                      setBookingForm({
+                        ...bookingForm,
+                        endTime: e.target.value,
+                      })
+                    }
                   />
                 </div>
               </div>
 
-              {/* Pricing Summary */}
-              <div className="bg-linear-to-br from-green-50 to-teal-50 p-6 rounded-2xl">
-                <h4 className="font-bold text-gray-900 mb-3">Pricing Information</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Hourly Rate:</span>
-                    <span className="font-semibold">LKR {selectedBicycle.pricePerHour}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Daily Rate:</span>
-                    <span className="font-semibold">LKR {selectedBicycle.pricePerDay}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Weekly Rate:</span>
-                    <span className="font-semibold">LKR {selectedBicycle.pricePerWeek}</span>
-                  </div>
+              <div className="p-6 bg-slate-900 rounded-[2rem] border border-slate-800 flex justify-between items-center group">
+                <div>
+                  <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
+                    Pricing Model
+                  </p>
+                  <p className="text-xl font-black text-white">
+                    Dynamic Calculation
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs font-black text-emerald-500 uppercase">
+                    Rate Applied
+                  </p>
+                  <p className="text-2xl font-black text-white">
+                    LKR{" "}
+                    {
+                      selectedBicycle[
+                        `pricePer${bookingForm.rentalType.charAt(0).toUpperCase() + bookingForm.rentalType.slice(1)}`
+                      ]
+                    }
+                  </p>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full bg-linear-to-r from-green-600 to-teal-600 text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transform hover:-translate-y-1 transition-all"
-              >
-                Confirm Booking
+              <button className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 py-6 rounded-[2rem] font-black text-xl shadow-2xl shadow-emerald-500/20 active:scale-95 transition-all">
+                Complete Reservation
               </button>
             </form>
           </div>
@@ -425,45 +599,86 @@ export default function HomePage() {
       )}
 
       {/* ==================== FOOTER ==================== */}
-      <footer className="bg-gray-900 text-white py-12 px-4 mt-20">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
-            <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="bg-linear-to-br from-green-500 to-teal-600 p-2 rounded-full">
-                  <Bike className="text-white" size={24} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold">Bicycle Safari</h3>
-                  <p className="text-sm text-gray-400">Udawalawa</p>
-                </div>
+      <footer className="bg-[#0a0f1e] pt-24 pb-12 px-4 border-t border-slate-900">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-16 mb-20">
+          <div className="col-span-1 md:col-span-2">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center">
+                <Bike className="text-slate-900" />
               </div>
-              <p className="text-gray-400">
-                Your gateway to adventure in Udawalawa's beautiful wilderness.
-              </p>
+              <h2 className="text-3xl font-black text-white italic tracking-tighter uppercase">
+                Rent <span className="text-emerald-500">Bicycle</span>
+              </h2>
             </div>
-
-            <div>
-              <h4 className="font-bold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#bikes" className="hover:text-green-400 transition">Our Bikes</a></li>
-                <li><a href="#about" className="hover:text-green-400 transition">About Us</a></li>
-                <li><a href="#contact" className="hover:text-green-400 transition">Contact</a></li>
-              </ul>
-            </div>
-
-            <div>
-              <h4 className="font-bold mb-4">Contact Us</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li className="flex items-center"><MapPin size={16} className="mr-2" /> Udawalawa, Sri Lanka</li>
-                <li className="flex items-center"><Phone size={16} className="mr-2" /> +94 77 123 4567</li>
-                <li className="flex items-center"><Mail size={16} className="mr-2" /> info@bicyclesafari.lk</li>
-              </ul>
-            </div>
+            <p className="text-xl text-slate-500 max-w-md leading-relaxed">
+              Udawalawa's premier bicycle expedition service. We bridge the gap
+              between curiosity and discovery.
+            </p>
           </div>
 
-          <div className="border-t border-gray-800 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Bicycle Safari Udawalawa. All rights reserved.</p>
+          <div>
+            <h4 className="font-black text-white uppercase text-xs tracking-[0.3em] mb-8">
+              Follow Trails
+            </h4>
+            <ul className="space-y-4 text-slate-400 font-bold">
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-emerald-400 transition-colors"
+                >
+                  Our Story
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#fleet"
+                  className="hover:text-emerald-400 transition-colors"
+                >
+                  Safety Protocols
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-emerald-400 transition-colors"
+                >
+                  Community Projects
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#"
+                  className="hover:text-emerald-400 transition-colors"
+                >
+                  Safari Blog
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="font-black text-white uppercase text-xs tracking-[0.3em] mb-8">
+              Headquarters
+            </h4>
+            <p className="text-slate-400 font-bold mb-4">
+              Main Gate Road, <br />
+              Udawalawa, Sri Lanka
+            </p>
+            <p className="text-emerald-400 font-black">+94 77 123 4567</p>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto pt-10 border-t border-slate-900 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-slate-600 font-bold text-sm">
+            © 2024 Bicycle Safari Udawalawa. Adventure Certified.
+          </p>
+          <div className="flex gap-8">
+            <span className="text-slate-600 hover:text-slate-400 cursor-pointer text-sm font-bold">
+              Privacy Policy
+            </span>
+            <span className="text-slate-600 hover:text-slate-400 cursor-pointer text-sm font-bold">
+              Rental Terms
+            </span>
           </div>
         </div>
       </footer>

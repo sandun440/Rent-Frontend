@@ -1,11 +1,11 @@
-import { NavLink } from 'react-router-dom';
-import { HomeIcon, BikeIcon, UsersIcon, ShoppingCartIcon } from '@heroicons/react/24/outline';
+import { NavLink } from "react-router-dom";
+import { LayoutDashboard, Bike, Users, ShoppingBag } from "lucide-react";
 
 const items = [
-  { to: '/admin', label: 'Dashboard', icon: HomeIcon },
-  { to: '/admin/bicycles', label: 'Bicycles', icon: BikeIcon },
-  { to: '/admin/users', label: 'Users', icon: UsersIcon },
-  { to: '/admin/orders', label: 'Orders', icon: ShoppingCartIcon },
+  { to: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/admin/bicycles", label: "Bicycles", icon: Bike },
+  { to: "/admin/users", label: "Users", icon: Users },
+  { to: "/admin/orders", label: "Orders", icon: ShoppingBag },
 ];
 
 export default function Sidebar() {
@@ -19,7 +19,7 @@ export default function Sidebar() {
               to={to}
               className={({ isActive }) =>
                 `flex items-center space-x-3 p-3 rounded-lg transition ${
-                  isActive ? 'bg-indigo-600' : 'hover:bg-gray-700'
+                  isActive ? "bg-indigo-600" : "hover:bg-gray-700"
                 }`
               }
             >
