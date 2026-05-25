@@ -197,7 +197,7 @@ export default function HomePage() {
               <ArrowRight className="group-hover:translate-x-1 transition-transform" />
             </a>
             <a
-              href="#experience"
+              href="#video"
               className="bg-slate-800 hover:bg-slate-700 text-white px-10 py-5 rounded-2xl font-black text-lg transition-all border border-slate-700 flex items-center gap-2"
             >
               Watch Safari <Compass className="text-emerald-400" />
@@ -298,7 +298,7 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-            <div className="w-[1300px] h-[700px] my-auto">
+            <div className="w-[1300px] h-[700px] my-auto" id="video">
               <video
                 className="h-full w-full object-cover rounded-lg"
                 controls

@@ -41,6 +41,12 @@ export default function Navbar() {
 
           <nav className="hidden md:flex items-center space-x-10">
             <a
+              href="/"
+              className="text-slate-400 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest"
+            >
+              Home
+            </a>
+            <a
               href="/#fleet"
               className="text-slate-400 hover:text-white transition-colors text-sm font-bold uppercase tracking-widest"
             >
