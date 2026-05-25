@@ -38,7 +38,8 @@ export default function HomePage() {
   });
 
   const calculateTotalCost = () => {
-    if (!bookingForm.startTime || !bookingForm.endTime || !selectedBicycle) return null;
+    if (!bookingForm.startTime || !bookingForm.endTime || !selectedBicycle)
+      return null;
     const start = new Date(bookingForm.startTime);
     const end = new Date(bookingForm.endTime);
     if (end <= start) return null;
@@ -244,7 +245,7 @@ export default function HomePage() {
             <div className="relative">
               <div className="absolute -inset-4 bg-emerald-500/10 blur-3xl rounded-full"></div>
               <img
-                src="/images/safari_vibe.jpg"
+                src="/images/safari_vibe_AI.png"
                 alt="Udawalawa Scenery"
                 className="relative rounded-[3rem] shadow-2xl border border-slate-800 grayscale hover:grayscale-0 transition-all duration-700 cursor-pointer"
               />
@@ -296,6 +297,20 @@ export default function HomePage() {
                   </div>
                 ))}
               </div>
+            </div>
+            <div className="w-[1300px] h-[700px] my-auto">
+              <video
+                className="h-full w-full object-cover rounded-lg"
+                controls
+                autoPlay
+                muted
+              >
+                <source
+                  src="/images/safari_video.mp4"
+                  type="video/mp4"
+                />
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </div>
@@ -608,8 +623,17 @@ export default function HomePage() {
                   </p>
                   <p className="text-sm font-bold text-slate-400 capitalize">
                     {bookingForm.rentalType} &bull; LKR{" "}
-                    {selectedBicycle[`pricePer${bookingForm.rentalType.charAt(0).toUpperCase() + bookingForm.rentalType.slice(1)}`]}{" "}
-                    / {bookingForm.rentalType === "hourly" ? "hr" : bookingForm.rentalType === "daily" ? "day" : "wk"}
+                    {
+                      selectedBicycle[
+                        `pricePer${bookingForm.rentalType.charAt(0).toUpperCase() + bookingForm.rentalType.slice(1)}`
+                      ]
+                    }{" "}
+                    /{" "}
+                    {bookingForm.rentalType === "hourly"
+                      ? "hr"
+                      : bookingForm.rentalType === "daily"
+                        ? "day"
+                        : "wk"}
                   </p>
                 </div>
                 <div className="text-right">
