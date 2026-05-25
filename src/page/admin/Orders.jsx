@@ -16,7 +16,8 @@ export default function Orders() {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setOrders(data);
+      const sorted = data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setOrders(sorted);
     } catch (error) {
       console.error("Error fetching orders:", error);
       toast.error("Failed to fetch orders");

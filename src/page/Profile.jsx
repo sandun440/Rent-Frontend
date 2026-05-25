@@ -9,6 +9,8 @@ import {
   Save,
   Loader2,
   ArrowLeft,
+  Bike,
+  Calendar,
   Lock,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
@@ -45,6 +47,8 @@ const Profile = () => {
         setUserData(userRes.data);
         setName(userRes.data.name);
         setOrders(ordersRes.data);
+        const sortedOrders = ordersRes.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        setOrders(sortedOrders);
       } catch (err) {
         toast.error("Failed to load profile");
         if (err.response?.status === 401) navigate("/login");
@@ -195,7 +199,6 @@ const Profile = () => {
         {/* ==================== BOOKING HISTORY ==================== */}
         <div className="mt-12 reveal-on-scroll active">
           <h2 className="text-3xl font-black text-white mb-8 flex items-center gap-3 italic uppercase">
-            
             <span className="text-emerald-500">History</span>
           </h2>
 
@@ -253,7 +256,6 @@ const Profile = () => {
               ))
             ) : (
               <div className="text-center py-20 bg-slate-900/30 rounded-[3rem] border border-dashed border-slate-700">
-                
                 <p className="text-slate-500 text-lg font-bold uppercase tracking-widest">
                   No adventures logged yet.
                 </p>

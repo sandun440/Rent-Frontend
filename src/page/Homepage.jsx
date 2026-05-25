@@ -37,6 +37,28 @@ export default function HomePage() {
     rentalType: "hourly",
   });
 
+  const calculateTotalCost = () => {
+    if (!bookingForm.startTime || !bookingForm.endTime || !selectedBicycle) return null;
+    const start = new Date(bookingForm.startTime);
+    const end = new Date(bookingForm.endTime);
+    if (end <= start) return null;
+
+    const durationHours = (end - start) / (1000 * 60 * 60);
+    const durationDays = (end - start) / (1000 * 60 * 60 * 24);
+    const durationWeeks = (end - start) / (1000 * 60 * 60 * 24 * 7);
+
+    switch (bookingForm.rentalType) {
+      case "hourly":
+        return Math.ceil(durationHours) * selectedBicycle.pricePerHour;
+      case "daily":
+        return Math.ceil(durationDays) * selectedBicycle.pricePerDay;
+      case "weekly":
+        return Math.ceil(durationWeeks) * selectedBicycle.pricePerWeek;
+      default:
+        return null;
+    }
+  };
+
   const revealingRefs = useRef([]);
 
   useEffect(() => {
@@ -222,7 +244,7 @@ export default function HomePage() {
             <div className="relative">
               <div className="absolute -inset-4 bg-emerald-500/10 blur-3xl rounded-full"></div>
               <img
-                src="/images/safari_vibe.png"
+                src="/images/safari_vibe.jpg"
                 alt="Udawalawa Scenery"
                 className="relative rounded-[3rem] shadow-2xl border border-slate-800 grayscale hover:grayscale-0 transition-all duration-700 cursor-pointer"
               />
@@ -367,13 +389,26 @@ export default function HomePage() {
                 key={bike._id}
                 className="group relative bg-[#1e293b] rounded-[2.5rem] overflow-hidden border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10"
               >
-                {/* Image Placeholder with Gradient */}
+                {/* Bicycle Image with Gradient Overlay */}
                 <div className="h-64 relative overflow-hidden bg-slate-800 flex items-center justify-center">
-                  <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 group-hover:opacity-100 opacity-60 transition-opacity"></div>
-                  <Bike
-                    size={120}
-                    className="text-slate-700 group-hover:text-emerald-400 transition-colors group-hover:scale-110 duration-500"
-                  />
+                  {bike.image ? (
+                    <img
+                      src={bike.image}
+                      alt={bike.name}
+                      className="w-full h-full object-cover group-hover:scale-110 duration-500 transition-transform"
+                    />
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/20 to-blue-500/20 group-hover:opacity-100 opacity-60 transition-opacity"></div>
+                      <Bike
+                        size={120}
+                        className="text-slate-700 group-hover:text-emerald-400 transition-colors group-hover:scale-110 duration-500"
+                      />
+                    </>
+                  )}
+                  {/* Subtle Bottom Shadow overlay for depth */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1e293b]/70 via-transparent to-transparent"></div>
+
                   <div className="absolute top-6 right-6">
                     <span className="px-4 py-2 bg-emerald-500 text-slate-900 rounded-full text-xs font-black uppercase shadow-lg">
                       {bike.type}
@@ -571,22 +606,25 @@ export default function HomePage() {
                   <p className="text-xs font-black text-slate-500 uppercase tracking-widest">
                     Pricing Model
                   </p>
-                  <p className="text-xl font-black text-white">
-                    Dynamic Calculation
+                  <p className="text-sm font-bold text-slate-400 capitalize">
+                    {bookingForm.rentalType} &bull; LKR{" "}
+                    {selectedBicycle[`pricePer${bookingForm.rentalType.charAt(0).toUpperCase() + bookingForm.rentalType.slice(1)}`]}{" "}
+                    / {bookingForm.rentalType === "hourly" ? "hr" : bookingForm.rentalType === "daily" ? "day" : "wk"}
                   </p>
                 </div>
                 <div className="text-right">
                   <p className="text-xs font-black text-emerald-500 uppercase">
-                    Rate Applied
+                    Total Cost
                   </p>
-                  <p className="text-2xl font-black text-white">
-                    LKR{" "}
-                    {
-                      selectedBicycle[
-                        `pricePer${bookingForm.rentalType.charAt(0).toUpperCase() + bookingForm.rentalType.slice(1)}`
-                      ]
-                    }
-                  </p>
+                  {calculateTotalCost() !== null ? (
+                    <p className="text-2xl font-black text-emerald-400">
+                      LKR {calculateTotalCost().toLocaleString()}
+                    </p>
+                  ) : (
+                    <p className="text-sm font-bold text-slate-500">
+                      Select dates to calculate
+                    </p>
+                  )}
                 </div>
               </div>
 
