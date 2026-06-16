@@ -22,7 +22,7 @@ import {
 import Navbar from "../components/Navbar";
 import { toast } from "react-toastify";
 
-const API_BASE = "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "") + "/api";
 
 export default function HomePage() {
   const [bicycles, setBicycles] = useState([]);
@@ -144,7 +144,7 @@ export default function HomePage() {
       } else {
         toast.error(result.error || "Booking failed");
       }
-    } catch (error) {
+    } catch {
       toast.error("Network error. Please try again later.");
     }
   };

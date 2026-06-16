@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import OrderRow from "../../components/OrderRow";
 import { toast } from "react-toastify";
 
-const API_BASE = "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "") + "/api";
 
 export default function Orders() {
   const [orders, setOrders] = useState([]);

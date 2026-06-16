@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
-const API_BASE = "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "") + "/api";
 
 export default function Users() {
   const [users, setUsers] = useState([]);

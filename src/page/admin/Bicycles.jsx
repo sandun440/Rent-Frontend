@@ -4,7 +4,7 @@ import BicycleForm from "../../components/BicycleForm";
 import { toast } from "react-toastify";
 import { Bike } from "lucide-react";
 
-const API_BASE = "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "") + "/api";
 
 export default function Bicycles() {
   const [list, setList] = useState([]);

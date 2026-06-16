@@ -1,7 +1,7 @@
 // Modified Dashboard.jsx
 import { useEffect, useState } from "react";
 
-const API_BASE = "/api";
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || "") + "/api";
 
 export default function Dashboard() {
   const [stats, setStats] = useState({
